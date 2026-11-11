@@ -1,32 +1,36 @@
 # Media Downloader
 
-A Mac app for saving video and audio from almost any web page, with a trimmer for cutting the clip you want before it downloads.
+Save video and audio from almost any web page: YouTube, Instagram, X, LinkedIn, Substack, TED, news sites and about 1,800 others. Trim the exact clip you want before it downloads, with a live preview. Runs entirely on your computer: no account, no API key, no quota.
 
-## Start
+A native Mac app and a Windows app, built on [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [ffmpeg](https://ffmpeg.org), with a Swiss-style black, white and green interface.
 
-Open **Media Downloader** from Applications, Launchpad or Spotlight. Quitting the app stops everything it started; if downloads are still running it asks first.
+## Download
 
-Needs `node`, `yt-dlp` and `ffmpeg` (all installed through Homebrew on this Mac).
+Get the latest installers from [Releases](../../releases/latest).
 
-Shortcuts: ⌘N new link, ⌘, settings, ⇧⌘O open the downloads folder, ⌘+ / ⌘− zoom.
+**Mac** (macOS 13 or later)
 
-## Rebuilding
+1. Install the engine once with [Homebrew](https://brew.sh): `brew install node yt-dlp ffmpeg`
+2. Open `Media Downloader for Mac.dmg` and drag the app to Applications.
+3. The app is not notarised by Apple, so the first time, right-click it and choose **Open**, or go to System Settings → Privacy & Security → **Open Anyway**.
 
-The app carries its own copy of `server.js` and `public/`. After changing either, run this (it replaces the copy in Applications):
+**Windows** (10 or 11)
 
-    ./mac/build.sh
-
-To work on the interface in a browser instead, run `node server.js --open`.
-
-## Windows
-
-`./windows/package.sh` builds `dist/Media Downloader for Windows.zip`. On the PC (Windows 10 or 11):
-
-1. Unzip it and double-click **Install Media Downloader**.
-2. Setup downloads its engine (portable Node.js, yt-dlp and ffmpeg, about 110 MB) into `%LOCALAPPDATA%\Media Downloader`. It needs no admin rights and nothing preinstalled.
-3. Open **Media Downloader** from the Start menu or Desktop. It runs in its own Edge app window (no tabs or address bar). Closing the window stops the engine, and it asks first if downloads are running.
+1. Unzip `Media Downloader for Windows.zip` and double-click **Install Media Downloader**. If SmartScreen warns you, choose **More info → Run anyway**.
+2. Setup downloads its engine (portable Node.js, yt-dlp and ffmpeg, about 110 MB) into `%LOCALAPPDATA%\Media Downloader`. No admin rights, nothing preinstalled.
+3. Open **Media Downloader** from the Start menu or Desktop. It runs in its own Edge app window. Closing the window stops the engine, and it asks first if downloads are running.
 
 Run Install again to update; settings and history are kept. **Uninstall Media Downloader** removes it and leaves your downloaded files alone. For signed-in cookies on Windows, use Firefox or a `cookies.txt`: Chrome and Edge lock their cookies while open.
+
+Mac shortcuts: ⌘N new link, ⌘, settings, ⇧⌘O open the downloads folder, ⌘+ / ⌘− zoom.
+
+## Build from source
+
+Needs `node`, `yt-dlp` and `ffmpeg`; the Mac app also needs Xcode's command-line tools (`xcode-select --install`).
+
+    node server.js --open    # run in a browser while developing
+    ./mac/build.sh           # build the Mac app into /Applications and dist/*.dmg
+    ./windows/package.sh     # build dist/Media Downloader for Windows.zip
 
 ## What it does
 
@@ -52,6 +56,10 @@ There is no API key, account or quota. Everything runs on this Mac through yt-dl
 - DRM-protected services (Netflix, Disney+, Spotify and similar) cannot be downloaded by any tool.
 - YouTube throttles VPN and data-centre addresses. If quality tops out at 360p or it asks for a sign-in, switch the VPN off or turn on cookies.
 
+## Use it responsibly
+
+Download only what you have the right to keep: your own uploads, openly licensed media, or material you may save under the law where you live and the site's terms. This project does not bypass DRM and is not affiliated with any of the sites it works with.
+
 ## Files
 
 - `server.js` — the whole backend
@@ -60,3 +68,8 @@ There is no API key, account or quota. Everything runs on this Mac through yt-dl
 - `windows/` — installer, launcher, icon and the script that packs the Windows zip
 - `~/Library/Application Support/Media Downloader/` — the app's settings, history, preview cache and engine log (cache is safe to delete)
 - `data/` — the same, for the browser version used while developing
+- `%LOCALAPPDATA%\Media Downloader\` — the Windows app, its engine and its data
+
+## License
+
+[MIT](LICENSE). yt-dlp is released under the Unlicense and ffmpeg under the LGPL/GPL; the Windows installer downloads them from their official sources at setup time.
