@@ -1,0 +1,13 @@
+{
+  "name": "media-downloader",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local media downloader with clip trimming. Node + yt-dlp + ffmpeg, no dependencies.",
+  "scripts": {
+    "start": "node server.js --open"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

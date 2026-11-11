@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Media Downloader</title>
+  <script>
+    // Apply the remembered theme before first paint.
+    try {
+      var t = localStorage.getItem('md-theme');
+      if (t === 'light' || t === 'dark' || t === 'auto') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  </script>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="masthead">
+    <p class="masthead-name">Media Downloader</p>
+    <div class="masthead-side">
+      <p class="engine-badge" id="engineBadge">
+        <span class="dot" id="engineDot" aria-hidden="true"></span>
+        <span id="engineText">Connecting</span>
+      </p>
+      <button type="button" class="txt" id="openSettings" aria-haspopup="dialog" aria-controls="sheet">Settings</button>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <!-- Hero: the link field is the headline -->
+    <section class="hero" aria-label="Fetch a link">
+      <form class="hero-form" id="heroForm" novalidate autocomplete="off">
+        <label class="visually-hidden" for="url">Link to a video or page</label>
+        <input class="hero-input" id="url" name="url" type="text" inputmode="url"
+               placeholder="Paste a link" spellcheck="false" autocapitalize="off" autocorrect="off">
+        <button type="submit" class="btn hero-btn" id="fetchBtn">Fetch</button>
+      </form>
+      <div class="hero-rule" id="heroRule" aria-hidden="true"><i></i></div>
+      <div class="hero-msg">
+        <p class="hero-status" id="status" role="status" aria-live="polite"></p>
+        <div class="hero-error" id="error" role="alert" hidden>
+          <p class="hero-error-msg" id="errorMsg"></p>
+          <p class="hero-error-hint" id="errorHint"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bench: one video -->
+    <section class="bench grid" id="bench" aria-label="Video" hidden>
+      <div class="bench-media">
+        <div class="stage" id="stage">
+          <img class="stage-media" id="thumb" alt="" hidden>
+          <video class="stage-media" id="video" playsinline preload="auto" hidden></video>
+          <button type="button" class="stage-btn" id="previewBtn">Load preview</button>
+        </div>
+        <p class="note" id="previewNote" role="status"></p>
+        <p class="note" id="liveNote" hidden>This is a live stream. It records from the moment you start until you cancel it in the list below.</p>
+
+        <div class="trim" id="trim" hidden>
+          <div class="timeline" id="timeline">
+            <div class="tl-ticks" id="tlTicks"></div>
+            <div class="tl-strip" id="tlStrip" hidden></div>
+            <div class="tl-dim" id="dimL"></div>
+            <div class="tl-dim tl-dim-r" id="dimR"></div>
+            <div class="tl-sel" id="tlSel"></div>
+            <div class="tl-playhead" id="playhead"></div>
+            <button type="button" class="tl-handle tl-handle-in" id="handleIn" role="slider" aria-label="Clip start" aria-orientation="horizontal"></button>
+            <button type="button" class="tl-handle tl-handle-out" id="handleOut" role="slider" aria-label="Clip end" aria-orientation="horizontal"></button>
+          </div>
+          <div class="tl-scale" aria-hidden="true"><span>0:00</span><span id="scaleEnd"></span></div>
+
+          <div class="readouts">
+            <div class="readout">
+              <label for="inInput">In</label>
+              <input class="readout-input" id="inInput" type="text" inputmode="decimal" spellcheck="false" autocomplete="off">
+            </div>
+            <div class="readout">
+              <label for="outInput">Out</label>
+              <input class="readout-input" id="outInput" type="text" inputmode="decimal" spellcheck="false" autocomplete="off">
+            </div>
+            <div class="readout readout-len">
+              <span class="readout-label">Length</span>
+              <output class="readout-big" id="lenOut"></output>
+            </div>
+          </div>
+
+          <div class="transport">
+            <div class="seg">
+              <button type="button" class="seg-btn" id="playBtn">Play</button>
+              <button type="button" class="seg-btn" id="setInBtn">Set in</button>
+              <button type="button" class="seg-btn" id="setOutBtn">Set out</button>
+              <button type="button" class="seg-btn" id="resetBtn">Reset</button>
+            </div>
+            <p class="transport-time">Playhead <span id="phTime">0:00.0</span></p>
+          </div>
+          <p class="note note-keys">Space plays and pauses. I and O mark in and out. Arrow keys step 1 s, with Shift 0.1 s.</p>
+        </div>
+      </div>
+
+      <div class="bench-info">
+        <h1 class="title rise" id="bTitle" style="--i:0"></h1>
+        <p class="meta rise" id="bMeta" style="--i:1"></p>
+
+        <div class="specs">
+          <div class="spec rise" id="rowType" style="--i:2">
+            <span class="spec-label" id="lblType">Type</span>
+            <div class="spec-ctl"><div class="seg" id="segType" role="group" aria-labelledby="lblType"></div></div>
+          </div>
+          <div class="spec rise" id="rowQuality" style="--i:3">
+            <span class="spec-label" id="lblQuality">Quality</span>
+            <div class="spec-ctl">
+              <div class="seg" id="segQuality" role="group" aria-labelledby="lblQuality"></div>
+              <p class="spec-hint" id="hintQuality"></p>
+            </div>
+          </div>
+          <div class="spec rise" id="rowFormat" style="--i:4">
+            <span class="spec-label" id="lblFormat">Format</span>
+            <div class="spec-ctl">
+              <div class="seg" id="segFormat" role="group" aria-labelledby="lblFormat"></div>
+              <p class="spec-hint" id="hintFormat"></p>
+            </div>
+          </div>
+          <div class="spec rise" id="rowCut" style="--i:5" hidden>
+            <span class="spec-label" id="lblCut">Cut</span>
+            <div class="spec-ctl">
+              <div class="seg" id="segCut" role="group" aria-labelledby="lblCut"></div>
+              <p class="spec-hint">Exact re-encodes at the cut points. Fast cuts on the nearest keyframe.</p>
+            </div>
+          </div>
+          <div class="spec rise" id="rowSubs" style="--i:6">
+            <span class="spec-label" id="lblSubs">Subtitles</span>
+            <div class="spec-ctl"><div class="seg" id="segSubs" role="group" aria-labelledby="lblSubs"></div></div>
+          </div>
+        </div>
+
+        <div class="rise" style="--i:7">
+          <button type="button" class="dl" id="dlBtn">
+            <span id="dlLabel">Download</span>
+            <span id="dlLen"></span>
+          </button>
+        </div>
+        <p class="note dl-note" id="dlNote" role="status"></p>
+
+        <div class="alts" id="alts" hidden>
+          <p class="alts-head">Other media found on this page</p>
+          <ul class="alts-list" id="altList"></ul>
+        </div>
+
+        <p class="bench-close"><button type="button" class="txt" id="closeBench">Close this video</button></p>
+      </div>
+    </section>
+
+    <!-- Playlist -->
+    <section class="playlist grid" id="playlist" aria-label="Playlist" hidden>
+      <div class="pl-main">
+        <div class="pl-tools">
+          <p class="pl-count" id="pCount"></p>
+          <div class="pl-tools-actions">
+            <button type="button" class="txt" id="pAll">Select all</button>
+            <button type="button" class="txt" id="pNone">Select none</button>
+          </div>
+        </div>
+        <ul class="pl-list" id="pList"></ul>
+      </div>
+
+      <div class="bench-info">
+        <h1 class="title rise" id="pTitle" style="--i:0"></h1>
+        <p class="meta rise" id="pMeta" style="--i:1"></p>
+
+        <div class="specs">
+          <div class="spec rise" style="--i:2">
+            <span class="spec-label" id="lblPType">Type</span>
+            <div class="spec-ctl"><div class="seg" id="pSegType" role="group" aria-labelledby="lblPType"></div></div>
+          </div>
+          <div class="spec rise" id="pRowQuality" style="--i:3">
+            <span class="spec-label" id="lblPQuality">Quality</span>
+            <div class="spec-ctl">
+              <div class="seg" id="pSegQuality" role="group" aria-labelledby="lblPQuality"></div>
+              <p class="spec-hint">Each item uses the closest quality it offers.</p>
+            </div>
+          </div>
+          <div class="spec rise" style="--i:4">
+            <span class="spec-label" id="lblPFormat">Format</span>
+            <div class="spec-ctl"><div class="seg" id="pSegFormat" role="group" aria-labelledby="lblPFormat"></div></div>
+          </div>
+        </div>
+
+        <div class="rise" style="--i:5">
+          <button type="button" class="dl" id="pAddBtn">
+            <span id="pAddLabel">Add to queue</span>
+            <span></span>
+          </button>
+        </div>
+        <p class="note dl-note" id="pNote" role="status"></p>
+        <p class="bench-close"><button type="button" class="txt" id="closePlaylist">Close this playlist</button></p>
+      </div>
+    </section>
+
+    <!-- Ledger -->
+    <section class="ledger" aria-labelledby="ledgerTitle">
+      <div class="ledger-head grid">
+        <h2 class="ledger-title" id="ledgerTitle">Downloads</h2>
+        <div class="ledger-tools">
+          <label class="visually-hidden" for="filter">Search downloads</label>
+          <input class="input ledger-filter" id="filter" type="search" placeholder="Search titles" spellcheck="false" autocomplete="off">
+          <button type="button" class="txt" id="clearBtn">Clear finished</button>
+        </div>
+      </div>
+      <p class="note ledger-note" id="ledgerNote" role="status"></p>
+      <ul class="jobs" id="jobs"></ul>
+      <p class="ledger-empty" id="empty">Nothing here yet. Paste a link above and your downloads line up here.</p>
+    </section>
+
+  </main>
+
+  <!-- Settings sheet -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" aria-hidden="true" inert>
+    <div class="sheet-head">
+      <h2 class="sheet-title" id="sheetTitle">Settings</h2>
+      <button type="button" class="txt" id="closeSettings">Close</button>
+    </div>
+    <p class="note sheet-note" id="settingsNote" role="status"></p>
+
+    <div class="field">
+      <label class="field-label" for="setDir">Save to</label>
+      <div class="field-row">
+        <input class="input" id="setDir" type="text" spellcheck="false" autocomplete="off">
+        <button type="button" class="btn btn-small" id="pickDir">Choose…</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label" id="lblCookies">Signed-in cookies</span>
+      <div class="seg" id="segCookies" role="group" aria-labelledby="lblCookies"></div>
+      <div class="field-sub" id="cookieBrowserWrap" hidden>
+        <label class="field-sublabel" for="setBrowser">Browser</label>
+        <span class="select">
+          <select id="setBrowser">
+            <option value="safari">Safari</option>
+            <option value="chrome">Chrome</option>
+            <option value="firefox">Firefox</option>
+            <option value="brave">Brave</option>
+            <option value="edge">Edge</option>
+          </select>
+        </span>
+      </div>
+      <div class="field-sub" id="cookieFileWrap" hidden>
+        <label class="field-sublabel" for="setCookieFile">Path to cookies.txt</label>
+        <input class="input" id="setCookieFile" type="text" placeholder="/Users/you/cookies.txt" spellcheck="false" autocomplete="off">
+      </div>
+      <p class="field-help" id="cookieHelp">Used only as a fallback when a site demands sign-in. Safari needs Full Disk Access for the app that launched the server. Chrome will ask for Keychain access once.</p>
+    </div>
+
+    <div class="field">
+      <span class="field-label" id="lblConc">Simultaneous downloads</span>
+      <div class="seg" id="segConc" role="group" aria-labelledby="lblConc"></div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="setRate">Speed limit</label>
+      <input class="input" id="setRate" type="text" placeholder="No limit" spellcheck="false" autocomplete="off">
+      <p class="field-help">Leave empty for no limit, or type a rate per second such as 500K or 2M.</p>
+    </div>
+
+    <div class="field">
+      <span class="field-label" id="lblEdit">Edit-ready H.264</span>
+      <div class="seg" id="segEdit" role="group" aria-labelledby="lblEdit"></div>
+      <p class="field-help">Converts VP9 and AV1 video so Premiere, After Effects and QuickTime open it. Downloads take longer.</p>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="setSubLangs">Subtitle languages</label>
+      <input class="input" id="setSubLangs" type="text" placeholder="en,es" spellcheck="false" autocomplete="off">
+      <p class="field-help">Language codes separated by commas.</p>
+    </div>
+
+    <div class="field">
+      <span class="field-label" id="lblTheme">Theme</span>
+      <div class="seg" id="segTheme" role="group" aria-labelledby="lblTheme"></div>
+    </div>
+
+    <div class="field field-engine">
+      <span class="field-label">Engine</span>
+      <dl class="engine-facts">
+        <div><dt>yt-dlp</dt><dd id="engYtdlp">Unknown</dd></div>
+        <div><dt>Age</dt><dd id="engAge">Unknown</dd></div>
+        <div><dt>ffmpeg</dt><dd id="engFfmpeg">Unknown</dd></div>
+      </dl>
+      <p class="field-help engine-nudge" id="engNudge" hidden></p>
+      <button type="button" class="btn btn-small" id="updateBtn">Update engine</button>
+      <div class="engine-log" id="engLog" role="log" aria-live="polite" aria-label="Engine update log" tabindex="0" hidden></div>
+    </div>
+  </aside>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
